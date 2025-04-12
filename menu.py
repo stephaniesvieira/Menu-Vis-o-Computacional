@@ -65,7 +65,7 @@ def copiar_imagem():
     imagem2 = imagem.copy()
     cv2.imshow('Imagem Copia', imagem2)
     
-    salvar_imagem('imagem_copia.jpg', imagem2)
+    salvar_imagem('imagem_copi.jpg', imagem2)
     
     cv2.waitKey(0)
     cv2.destroyAllWindows()
