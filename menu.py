@@ -5,7 +5,7 @@ import numpy as np
 import pyfiglet
 import time
 import shutil
-
+import matplotlib.pyplot as plt
 
 # Cria a pasta para imagens modificadas se não existir
 if not os.path.exists('Imagens Modificadas'):
@@ -23,7 +23,6 @@ def tela_boas_vindas():
     print(banner_centralizado)
     print(mensagem_centralizada)
     time.sleep(5)
-
 
 def salvar_imagem(nome_arquivo, imagem):
     """Função auxiliar para salvar imagens na pasta de modificadas"""
@@ -470,6 +469,112 @@ def aplicar_sobel():
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+def mostrar_histograma():
+    imagem = cv2.imread('img1.jpg')
+    if imagem is None:
+        print("Nenhuma imagem carregada.")
+        return
+    plt.figure()
+    if len(imagem.shape) == 2:
+        plt.hist(imagem.ravel(), 256, [0, 256], color='gray')
+    else:
+        cores = ('b', 'g', 'r')
+        for i, cor in enumerate(cores):
+            plt.hist(imagem[:, :, i].ravel(), 256, [0, 256], label=cor, color=cor)
+    plt.title("Histograma")
+    plt.xlabel("Intensidade")
+    plt.ylabel("Frequência")
+    plt.legend()
+    plt.show()
+
+def aplicar_morfologia(tipo):
+    imagem = cv2.imread('img1.jpg')
+    if imagem is None:
+        print("Nenhuma imagem carregada.")
+        return
+    img_gray = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
+    kernel = np.ones((3, 3), np.uint8)
+    
+    if tipo == 'erosao':
+        res = cv2.erode(img_gray, kernel, iterations=1)
+    elif tipo == 'dilatacao':
+        res = cv2.dilate(img_gray, kernel, iterations=1)
+    elif tipo == 'abertura':
+        res = cv2.morphologyEx(img_gray, cv2.MORPH_OPEN, kernel)
+    elif tipo == 'fechamento':
+        res = cv2.morphologyEx(img_gray, cv2.MORPH_CLOSE, kernel)
+    elif tipo == 'abertura_fechamento':
+        res = cv2.morphologyEx(img_gray, cv2.MORPH_OPEN, kernel)
+        res = cv2.morphologyEx(res, cv2.MORPH_CLOSE, kernel)
+    elif tipo == 'gradiente':
+        res = cv2.morphologyEx(img_gray, cv2.MORPH_GRADIENT, kernel)
+    elif tipo == 'top_hat':
+        res = cv2.morphologyEx(img_gray, cv2.MORPH_TOPHAT, kernel)
+    
+    cv2.imshow(f"{tipo}", res)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def eliminar_ruido():
+    imagem = cv2.imread('img1.jpg')
+    if imagem is None:
+        print("Nenhuma imagem carregada.")
+        return
+    res = cv2.medianBlur(imagem, 3)
+    cv2.imshow("Eliminação de Ruído", res)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def modificar_histograma():
+    imagem = cv2.imread('img1.jpg')
+    if imagem is None:
+        print("Nenhuma imagem carregada.")
+        return
+    img_gray = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
+
+    print("\nModificações disponíveis:")
+    print("1 - Binarização")
+    print("2 - Equalização")
+    print("3 - Quantização")
+    print("4 - Splitting")
+    print("5 - Stretching")
+    
+    escolha = int(input("Escolha a modificação: "))
+    
+    if escolha == 1:
+        _, res = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
+        titulo = "Binarização"
+    elif escolha == 2:
+        res = cv2.equalizeHist(img_gray)
+        titulo = "Equalização"
+    elif escolha == 3:
+        levels = int(input("Digite o número de níveis (ex: 4): "))
+        bins = np.linspace(0, 256, levels + 1)
+        res = np.digitize(img_gray, bins) * (256 // levels) - 1
+        res = np.clip(res, 0, 255).astype(np.uint8)
+        titulo = "Quantização"
+    elif escolha == 4:
+        mid = 128
+        low = img_gray[img_gray < mid]
+        high = img_gray[img_gray >= mid]
+        print(f"Pixels na parte baixa: {len(low)}")
+        print(f"Pixels na parte alta: {len(high)}")
+        return
+    elif escolha == 5:
+        min_val = np.min(img_gray)
+        max_val = np.max(img_gray)
+        res = ((img_gray - min_val) / (max_val - min_val) * 255).astype(np.uint8)
+        titulo = "Stretching"
+    else:
+        print("Opção inválida.")
+        return
+    
+    cv2.imshow(titulo, res)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
 def main():
     tela_boas_vindas()  # Exibe a tela de boas-vindas antes de tudo
 
@@ -497,6 +602,16 @@ def main():
         print('19 - Recortar região da imagem')
         print('20 - Redimensionar imagem')
         print('21 - Aplicar filtro Sobel (detecção de bordas)')
+        print('22 - Mostrar Histograma')
+        print('23 - Erosão')
+        print('24 - Dilatação')
+        print('25 - Abertura')
+        print('26 - Fechamento')
+        print('27 - Abertura e Fechamento em tons de cinza')
+        print('28 - Gradiente Morfológico')
+        print('29 - Top Hat')
+        print('30 - Eliminação de Ruídos')
+        print('31 - Modificação do Histograma')
         print('0 - Sair')
         
         try:
@@ -544,19 +659,37 @@ def main():
                 redimensionar_imagem()
             elif opcao == 21:
                 aplicar_sobel()
+            elif opcao == 22:
+                mostrar_histograma()
+            elif opcao == 23:
+                aplicar_morfologia('erosao')
+            elif opcao == 24:
+                aplicar_morfologia('dilatacao')
+            elif opcao == 25:
+                aplicar_morfologia('abertura')
+            elif opcao == 26:
+                aplicar_morfologia('fechamento')
+            elif opcao == 27:
+                aplicar_morfologia('abertura_fechamento')
+            elif opcao == 28:
+                aplicar_morfologia('gradiente')
+            elif opcao == 29:
+                aplicar_morfologia('top_hat')
+            elif opcao == 30:
+                eliminar_ruido()
+            elif opcao == 31:
+                modificar_histograma()
             elif opcao == 0:
                 print("Saindo do programa...")
                 break
             else:
-                os.system('cls' if os.name == 'nt' else 'clear')
                 print('Opcao invalida, tente novamente.')
-                time.sleep(2)
-                
+            time.sleep(2)
             os.system('cls' if os.name == 'nt' else 'clear')
         except ValueError:
-            os.system('cls' if os.name == 'nt' else 'clear')
             print("Entrada invalida. Por favor, digite um numero.")
             time.sleep(2)
+            os.system('cls' if os.name == 'nt' else 'clear')
 
 if __name__ == "__main__":
     main()
